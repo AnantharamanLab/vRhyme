@@ -44,8 +44,8 @@ def test_packages():
 def test_software():
     sys.stdout.write('\n  Program Dependencies\n  --------------------\n')
     software = {
-        'mmseqs': 'Not Found! Requred',
-        'samtools': 'Not Found! Usually Requred',
+        'mmseqs': 'Not Found! Required',
+        'samtools': 'Not Found! Usually Required',
         'prodigal': 'Not Found! Optional',
         'mash': 'Not Found! Optional',
         'nucmer': 'Not Found! Optional',
@@ -61,10 +61,25 @@ def test_software():
     sys.stdout.write('\n')  
 
 
-def unzip_model():
-    here = str(os.path.dirname(os.path.abspath(__file__)))
-    if os.path.exists(f'{here}/models/vRhyme_machine_model_ET.sav.gz'):
-        subprocess.run(f'gunzip {here}/models/vRhyme_machine_model_ET.sav.gz', shell=True)
+def test_model():
+    sys.stdout.write('\n  Machine Learning Models\n  -----------------------\n')
+
+    base_scripts = os.path.dirname(os.path.abspath(__file__)).replace('/aux','')
+    base_bin = os.path.dirname(os.path.abspath(__file__)).replace('/bin','')
+    if os.path.exists(f'{base_scripts}/models/vRhyme_machine_model_ET.sav.gz'):
+        try:
+            subprocess.check_output("which gzip", shell=True)
+        except Exception:
+            sys.stdout.write(f'  unzip ET model: Failed (gzip not found)\n')
+        subprocess.run(f'gunzip {base_scripts}/models/vRhyme_machine_model_ET.sav.gz', shell=True)
+    for ml in ['NN', 'ET']:
+        if os.path.exists(f'{base_scripts}/models/vRhyme_machine_model_{ml}.sav'):
+            sys.stdout.write(f'  {ml} model: Success\n')
+        elif os.path.exists(f'{base_bin}/lib/python{sys.version_info.major}.{sys.version_info.minor}/site-packages/vRhyme/models/vRhyme_machine_model_{ml}.sav'):
+            sys.stdout.write(f'  {ml} model: Success\n')
+        else:
+            sys.stdout.write(f'  {ml} model: Not Found!\n')
+    sys.stdout.write('\n')
     
 if __name__ == '__main__':
     try:
@@ -73,4 +88,4 @@ if __name__ == '__main__':
         pass
     test_packages()
     test_software()
-    unzip_model()
+    test_model()

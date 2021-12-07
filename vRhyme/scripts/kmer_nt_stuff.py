@@ -8,7 +8,10 @@ import collections
 import itertools
 from numba import jit
 import numpy as np
-from scripts import save_dist_dicts as info
+try:
+    from scripts import save_dist_dicts as info
+except (ModuleNotFoundError, ImportError):
+    import save_dist_dicts as info
 
 @jit(nopython=True)
 def denomer_generate(len_nt_list,in_list, in_avg):

@@ -4,7 +4,10 @@
 # University of Wisconsin-Madison
 
 from numba import jit
-from scripts import save_dist_dicts as info
+try:
+    from scripts import save_dist_dicts as info
+except (ModuleNotFoundError, ImportError):
+    import save_dist_dicts as info
 
 
 @jit(nopython=True)

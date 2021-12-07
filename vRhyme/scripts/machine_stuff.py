@@ -8,6 +8,8 @@ warnings.filterwarnings("ignore")
 import pandas as pd
 import pickle
 from numba import jit
+import os
+import sys
 
 
 @jit(nopython=True)
@@ -52,14 +54,21 @@ def cd_compare(p, c, network):
     return r_check, r
 
 
-def machine_stuff(metrics, vRhyme_path, presets, model_method, new_pairs, cohen_list, iterations):
+def machine_stuff(metrics, presets, model_method, new_pairs, cohen_list, iterations):
     '''
     Main wrapper for machine learning and cutoff checks
     '''
     anno = pd.read_csv(metrics, sep='\t', header=0)
 
+    base_scripts = os.path.dirname(os.path.abspath(__file__)).replace('/scripts','')
+    base_bin = os.path.dirname(os.path.abspath(__file__)).replace('/bin','')
+    if os.path.exists(f'{base_scripts}/models/vRhyme_machine_model_NN.sav'):
+        ml_path = f'{base_scripts}/models/'
+    else: # pip
+        ml_path = f'{base_bin}/lib/python{sys.version_info.major}.{sys.version_info.minor}/site-packages/vRhyme/models/'
+
     if model_method == 'hybrid' or model_method == 'ET':
-        with open(vRhyme_path + "/models/vRhyme_machine_model_ET.sav", 'rb') as read_model_ET:
+        with open(f'{ml_path}vRhyme_machine_model_ET.sav', 'rb') as read_model_ET:
             model_ET = pickle.load(read_model_ET)
 
         probs_ET = model_ET.predict_proba(anno)
@@ -67,9 +76,8 @@ def machine_stuff(metrics, vRhyme_path, presets, model_method, new_pairs, cohen_
         probs_ET = [p[1] for p in probs_ET] # just the probability of "same" genome according to model
         length = len(probs_ET)
 
-
     if model_method == 'hybrid' or model_method == 'NN':
-        with open(vRhyme_path + "/models/vRhyme_machine_model_NN.sav", 'rb') as read_model_NN:
+        with open(f'{ml_path}vRhyme_machine_model_NN.sav', 'rb') as read_model_NN:
             model_NN = pickle.load(read_model_NN)
 
         probs_NN = model_NN.predict_proba(anno)

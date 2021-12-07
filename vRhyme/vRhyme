@@ -23,6 +23,15 @@ descript = '''
 #  Contact: Kristopher Kieft (kieft@wisc.edu)           #
 #########################################################
 
+ USAGE:
+ 
+ 1. required: specify scaffolds with -i
+ 2. required: pick a coverage input (-c, -b, -s, -r, -u, or -v)
+ 3. common: provide -o, -t, -p, -g and/or -l
+ 4. optional: modify run with other flags
+
+ EXAMPLES: 
+
  minimum input example with bam files:
  vRhyme -i fasta -b bam_folder/*.bam
 
@@ -30,41 +39,43 @@ descript = '''
  vRhyme -i fasta -c coverage_file.tsv
 
  full BAM input example:
- vRhyme -i fasta -g genes -p proteins -b bam_folder/*.bam -t threads -o output_folder/
+ vRhyme -i fasta -g genes -p proteins -b bam_folder/*.bam -t threads -o output_folder
 
  reads input example:
- vRhyme -i fasta -g genes -p proteins -r paired_reads_folder/*.fastq -t threads -o output_folder/ --method longest
+ vRhyme -i fasta -g genes -p proteins -r paired_reads_folder/*.fastq -t threads -o output_folder --method longest
 
  only use dereplicate function:
- vRhyme -i input_fasta -t threads -o output_folder/ --derep_only --method longest
+ vRhyme -i input_fasta -t threads -o output_folder --derep_only --method longest
 
 ___________________________________________________________________
 \033[0m
 '''
 vRhyme = argparse.ArgumentParser(description=descript, formatter_class=argparse.RawTextHelpFormatter, usage=argparse.SUPPRESS)
 vRhyme.add_argument('--version', action='version', version='vRhyme v1.0.0')
+required = vRhyme.add_argument_group('REQUIRED')
+pick = vRhyme.add_argument_group('PICK ONE COVERAGE INPUT')
 common = vRhyme.add_argument_group('COMMONLY USED')
-inputs = vRhyme.add_argument_group('OTHER INPUTS')
-outputs = vRhyme.add_argument_group('EDIT OUTPUTS')
+outputs = vRhyme.add_argument_group('MODIFY OUTPUTS')
 read_align = vRhyme.add_argument_group('READ ALIGNMENT')
 filtering = vRhyme.add_argument_group('BIN FILTERS')
 dereplication = vRhyme.add_argument_group('DEREPLICATION')
 #
-common.add_argument('-i', type=str, nargs=1, default=[''], help='input nucleotide scaffolds')
-common.add_argument('-o', type=str, nargs=1, default=[''], help="output folder [vRhyme_results_<input_scaffolds_name>]")
-common.add_argument('-g', type=str, nargs=1, default = [''], help="input nucleotide genes in format name_#, skip to run Prodigal")
-common.add_argument('-p', type=str, nargs=1, default = [''], help="input amino acid proteins in format name_#, skip to run Prodigal")
-common.add_argument('-b', type=str, nargs='*', default = [''], help='BAM (.bam) sequence alignment files, sorted or unsorted.')
-common.add_argument('-t', type=str, nargs=1, default=['5'], help="number of parallel processes to run (equivalent to threads, see --speed) [5]")
-common.add_argument('-l', type=str, nargs=1, default=['2000'], help="minimum scaffold length to consider for binning [2000]")
+required.add_argument('-i', metavar='', type=str, nargs=1, default=[''], help='input nucleotide scaffolds')
 #
-inputs.add_argument('-s', type=str, nargs='*', default = [''], help='SAM (.sam) sequence alignment files.')
-inputs.add_argument('-r', type=str, nargs='*', default = [''], help="paired forward (_1.fastq) and reverse (_2.fastq) read files")
-inputs.add_argument('-u', type=str, nargs='*', default = [''], help="unpaired (.fastq) read files")
-inputs.add_argument('-v', type=str, nargs='*', default = [''], help="interleaved paired (.fastq) read files, '--aligner bowtie2' only")
-inputs.add_argument('-c', type=str, nargs=1, default = [''], help="coverage table generated from vRhyme or from cov_table_convert.py")
-inputs.add_argument('--interest', metavar='', type=str, nargs=1, default = [''], help="file containing a list of scaffolds of interest to dereplicate/bin.")
+pick.add_argument('-c', metavar='', type=str, nargs=1, default = [''], help="coverage table generated from vRhyme or from cov_table_convert.py")
+pick.add_argument('-b', type=str, nargs='*', default = [''], help='BAM (.bam) sequence alignment files, sorted or unsorted.')
+pick.add_argument('-s', type=str, nargs='*', default = [''], help='SAM (.sam) sequence alignment files.')
+pick.add_argument('-r', type=str, nargs='*', default = [''], help="paired forward (_1.fastq) and reverse (_2.fastq) read files")
+pick.add_argument('-u', type=str, nargs='*', default = [''], help="unpaired (.fastq) read files")
+pick.add_argument('-v', type=str, nargs='*', default = [''], help="interleaved paired (.fastq) read files, '--aligner bowtie2' only")
 #
+common.add_argument('-o', metavar='', type=str, nargs=1, default=[''], help="output folder [vRhyme_results_<input_scaffolds_name>]")
+common.add_argument('-t', metavar='', type=str, nargs=1, default=['5'], help="number of parallel processes to run (equivalent to threads, see --speed) [5]")
+common.add_argument('-g', metavar='', type=str, nargs=1, default = [''], help="input nucleotide genes in format name_#, skip to run Prodigal")
+common.add_argument('-p', metavar='', type=str, nargs=1, default = [''], help="input amino acid proteins in format name_#, skip to run Prodigal")
+common.add_argument('-l', metavar='', type=str, nargs=1, default=['2000'], help="minimum scaffold length to consider for binning [2000]")
+#
+outputs.add_argument('--interest', metavar='', type=str, nargs=1, default = [''], help="file containing a list of scaffolds of interest to dereplicate/bin.")
 outputs.add_argument('--keep_sam', action='store_true', help="do not remove SAM files generated by vRhyme, reads input only [off].")
 outputs.add_argument('--keep_bam', action='store_true', help="do not remove unsorted/index BAM files generated by vRhyme, always keep sorted [off].")
 outputs.add_argument('--speed', action='store_true', help="allow extra CPU multithreading per process (may use more CPUs than '-t <int>' per process) [off].")
@@ -78,8 +89,8 @@ dereplication.add_argument('--derep_id', metavar='', type=str, nargs=1, default 
 dereplication.add_argument('--frac', metavar='', type=str, nargs=1, default = [''], help='minimum coverage in overlap percent for dereplication [composite=0.20, longest=0.70].')
 dereplication.add_argument('--mash_k', metavar='', type=str, nargs=1, default = ['31'], help='equivalent to mash sketch -k [31].')
 dereplication.add_argument('--mash_s', metavar='', type=str, nargs=1, default = ['1000'], help='equivalent to mash sketch -s [1000].')
-dereplication.add_argument('--sens_ends', metavar='', type=str, nargs=1, default = ['0.10'], help="free ends sensitivity, as fraction of scaffold length, to merging over regions of complexity; requires '--method composite' [0.10].")
-dereplication.add_argument('--sens_overlap', metavar='', type=str, nargs=1, default = ['0.25'], help="alignment overlap sensitivity, as fraction of scaffold length, to merging over regions of complexity; requires '--method composite' [0.25].")
+dereplication.add_argument('--sens_ends', metavar='', type=str, nargs=1, default = ['0.10'], help="free ends sensitivity to merging over regions of complexity; requires '--method composite' [0.10].")
+dereplication.add_argument('--sens_overlap', metavar='', type=str, nargs=1, default = ['0.25'], help="alignment overlap sensitivity to merging over regions of complexity; requires '--method composite' [0.25].")
 dereplication.add_argument('--nucmer_c', metavar='', type=str, nargs=1, default = ['1000'], help='equivalent to nucmer -c [1000].')
 dereplication.add_argument('--nucmer_b', metavar='', type=str, nargs=1, default = ['1000'], help='equivalent to nucmer -b [1000].')
 dereplication.add_argument('--nucmer_g', metavar='', type=str, nargs=1, default = ['1000'], help='equivalent to nucmer -g [1000].')
@@ -115,7 +126,7 @@ if args.speed == False:
     os.environ["VECLIB_MAXIMUM_THREADS"] = f'{mp_env}'
     os.environ["NUMEXPR_NUM_THREADS"] = f'{mp_env}'
 
-try:
+try: # no pip
     from scripts import save_dist_dicts as info
     from scripts import linclust_stuff
     from scripts import machine_stuff
@@ -130,10 +141,21 @@ try:
     from scripts import derep_stuff
     from scripts import prodigal_stuff
     from scripts import score_stuff
-except Exception as e:
-    sys.stderr.write("\nError: could not load dependencies. Try running test_vRhyme.py.\n\n")
-    sys.stderr.write(str(e) + "\n")
-    exit(1)
+except Exception: # pip
+    import save_dist_dicts as info
+    import linclust_stuff
+    import machine_stuff
+    import distance_stuff
+    import read_nt_stuff
+    import kmer_nt_stuff
+    import codon_stuff
+    import bowtie2_stuff
+    import bwa_stuff
+    import extract_stuff
+    import coverage_stuff
+    import derep_stuff
+    import prodigal_stuff
+    import score_stuff
 
 def looper(s_set):
     while True:
@@ -145,9 +167,26 @@ def looper(s_set):
 
 vRhyme_path = str(os.path.dirname(os.path.abspath(__file__)))
 if os.path.exists(f'{vRhyme_path}/models/vRhyme_machine_model_ET.sav.gz'):
-    # first time running vRhyme, unzip the larger ET model
+    # first time running vRhyme, unzip the larger ET model (no pip install)
     subprocess.run(f'gunzip {vRhyme_path}/models/vRhyme_machine_model_ET.sav.gz', shell=True)
-#
+
+# check for a pip install
+codon_stuff_threader = 'codon_stuff_threader.py'
+if os.path.exists(f'{vRhyme_path}/scripts/codon_stuff_threader.py'):
+    codon_stuff_threader = f'{vRhyme_path}/scripts/codon_stuff_threader.py'
+
+coverage_stuff_threader = 'coverage_stuff_threader.py'
+if os.path.exists(f'{vRhyme_path}/scripts/coverage_stuff_threader.py'):
+    coverage_stuff_threader = f'{vRhyme_path}/scripts/coverage_stuff_threader.py'
+
+kmer_nt_stuff_threader = 'kmer_nt_stuff_threader.py'
+if os.path.exists(f'{vRhyme_path}/scripts/kmer_nt_stuff_threader.py'):
+    kmer_nt_stuff_threader = f'{vRhyme_path}/scripts/kmer_nt_stuff_threader.py'
+
+network_stuff_threader = 'network_stuff_threader.py'
+if os.path.exists(f'{vRhyme_path}/scripts/network_stuff_threader.py'):
+    network_stuff_threader = f'{vRhyme_path}/scripts/network_stuff_threader.py'
+
 starting_time = time.time()
 start_time = str(datetime.datetime.now().time()).rsplit(".",1)[0]
 #
@@ -348,7 +387,6 @@ if args.derep_only == False: #comes before derep to check read file status befor
     subprocess.Popen('mkdir ' + folder + "vRhyme_bam_files", shell=True)
     subprocess.Popen('mkdir ' + folder + "vRhyme_coverage_files", shell=True)
 
-
     try:
         subprocess.check_output("which mmseqs", shell=True)
     except Exception:
@@ -365,8 +403,6 @@ if args.derep_only == False: #comes before derep to check read file status befor
         logging.info(f"\nError: scikit-learn version {sk_version} is not compatible with vRhyme. Please update to version >= 0.23.0. Exiting.")
         exit(1)
 
-
-    #########################
     if in_genes == '' or in_prots == '':
         try:
             subprocess.check_output("which prodigal", shell=True)
@@ -428,8 +464,6 @@ if args.derep_only == False: #comes before derep to check read file status befor
             except Exception:
                 logging.info("Error: BWA cannot be found. Install BWA, try --aligner bowtie2 or align read separately. Exiting.")
                 exit(1)
-
-#########################
 
 # dereplicatiton
 if derep_method != 'none':
@@ -503,7 +537,6 @@ if args.derep_only == True:
     logging.info("Dereplicated sequences:  %s" % sequences)
     exit() # vRhyme finished
 
-#########################
 
 if interest != '':
     log_time = str(round((time.time() - float(starting_time))/60,2))
@@ -537,12 +570,11 @@ if length_keep < 2:
     exit(1)
 
 
-##########
 bam_raw = []
 if interleaved_files != ['']:
     log_time = str(round((time.time() - float(starting_time))/60,2))
     blanks = ''.join([' '] * (14-len(log_time)))
-    logging.info("%s%sInterleaved paired end read file(s) identified. Running %s on %d paired files" % (log_time,blanks,aligner,len(interleaved_files)))
+    logging.info("%s%sInterleaved paired end read file(s) identified. Running %s on %d paired file(s)" % (log_time,blanks,aligner,len(interleaved_files)))
     for single in interleaved_files:
         if aligner == 'bowtie2':
             build = bowtie2_stuff.bowtie2_build_stuff(in_fasta, spaces, folder)
@@ -556,7 +588,7 @@ if interleaved_files != ['']:
 if paired_files != ['']:
     log_time = str(round((time.time() - float(starting_time))/60,2))
     blanks = ''.join([' '] * (14-len(log_time)))
-    logging.info("%s%sPaired end read file(s) identified. Running %s on %d files" % (log_time,blanks,aligner,len(paired_files)/2))
+    logging.info("%s%sPaired end read file(s) identified. Running %s on %d set of paired files" % (log_time,blanks,aligner,len(paired_files)/2))
     for n in range(0,len(paired_files),2):
         forward = paired_files[n]
         reverse = paired_files[n+1]
@@ -572,7 +604,7 @@ if paired_files != ['']:
 if single_files != ['']:
     log_time = str(round((time.time() - float(starting_time))/60,2))
     blanks = ''.join([' '] * (14-len(log_time)))
-    logging.info("%s%sSingle end read file(s) identified. Running %s on %d files" % (log_time,blanks,aligner,len(single_files)))
+    logging.info("%s%sSingle end read file(s) identified. Running %s on %d unpaired file(s)" % (log_time,blanks,aligner,len(single_files)))
     for single in single_files:
         if aligner == 'bowtie2':
             build = bowtie2_stuff.bowtie2_build_stuff(in_fasta, spaces, folder)
@@ -655,7 +687,7 @@ if len(bam_raw) != 0:
     for f in bam_raw:
         if f == '':
             continue
-        s = subprocess.Popen(f'{vRhyme_path}/scripts/coverage_stuff_threader.py {f} {mask} {folder} {read_id}', shell=True)
+        s = subprocess.Popen(f'{coverage_stuff_threader} {f} {mask} {folder} {read_id}', shell=True)
         s_set.add(s)
         opened += 1
         if opened == int(threads):
@@ -698,8 +730,11 @@ if len(bam_raw) != 0:
     log_time = str(round((time.time() - float(starting_time))/60,2))
     blanks = ''.join([' '] * (14-len(log_time)))
     logging.info("%s%sCoverage extraction complete. Generating coverage table" % (log_time,blanks))
-    subprocess.run("paste " + folder + "vRhyme_coverage_files/vRhyme_names.txt " + folder + "vRhyme_coverage_files/*coverage.tsv > " + folder + "vRhyme_coverage_files/vRhyme_coverage_values.tsv", shell=True)
+    subprocess.run("paste " + folder + "vRhyme_coverage_files/vRhyme_names.txt " + folder + "vRhyme_coverage_files/*coverage.tsv > " + folder + "vRhyme_coverage_files/vRhyme_coverage_values.tsv 2> /dev/null", shell=True)
     cov_table = folder + "vRhyme_coverage_files/vRhyme_coverage_values.tsv" # else cov_table is input -c
+    if not os.path.exists(cov_table):
+        logging.info("%s%s\nError: something went wrong with mapping or SAM/BAM conversions. No coverage table was generated. Exiting.\n\n" % (log_time,blanks))
+        exit(1)
 
 log_time = str(round((time.time() - float(starting_time))/60,2))
 blanks = ''.join([' '] * (14-len(log_time)))
@@ -725,7 +760,7 @@ if len(pair_genomes) > 1:
             if f[1] == 'ffn':
                 ffn = folder + "vRhyme_split_runs/" + ffn
                 n += 1
-                s = subprocess.Popen(f'{vRhyme_path}/scripts/codon_stuff_threader.py {ffn} {folder} vRhyme_split_runs/{n} {spaces}', shell=True)
+                s = subprocess.Popen(f'{codon_stuff_threader} {ffn} {folder} vRhyme_split_runs/{n} {spaces}', shell=True)
                 s_list.append(s)
         for item in s_list:
             item.wait()
@@ -770,8 +805,7 @@ if len(pair_genomes) > 1:
             if f[1] == 'ffn':
                 ffn = folder + "vRhyme_split_runs/" + ffn
                 n += 1
-                s = subprocess.Popen(f'{vRhyme_path}/scripts/codon_stuff_threader.py {ffn} {folder} vRhyme_split_runs/{n} {spaces}', shell=True)
-
+                s = subprocess.Popen(f'{codon_stuff_threader} {ffn} {folder} vRhyme_split_runs/{n} {spaces}', shell=True)
                 s_list.append(s)
         for item in s_list:
             item.wait()
@@ -810,10 +844,7 @@ if len(pair_genomes) > 1:
             if f[1] == 'fa' or f[1] == 'fna':
                 fna = folder + "vRhyme_split_runs/" + fna
                 n += 1
-                if prodigal_split == False:
-                    s = subprocess.Popen(f'{vRhyme_path}/scripts/kmer_nt_stuff_threader.py {fna} {folder} vRhyme_split_runs/{n} False', shell=True)
-                else:
-                    s = subprocess.Popen(f'{vRhyme_path}/scripts/kmer_nt_stuff_threader.py {fna} {folder} vRhyme_split_runs/{n} True', shell=True)
+                s = subprocess.Popen(f'{kmer_nt_stuff_threader} {fna} {folder} vRhyme_split_runs/{n} {prodigal_split}', shell=True)
                 s_list.append(s)
         for item in s_list:
             item.wait()
@@ -863,7 +894,7 @@ if len(pair_genomes) > 1:
         log_time = str(round((time.time() - float(starting_time))/60,2))
         blanks = ''.join([' '] * (14-len(log_time)))
         logging.info("%s%sPerforming machine learning classification" % (log_time,blanks))
-        net_data = machine_stuff.machine_stuff(distances, vRhyme_path, presets, model_method, pairs_machine, cohen_machine, iterations)
+        net_data = machine_stuff.machine_stuff(distances, presets, model_method, pairs_machine, cohen_machine, iterations)
         cohen_machine = None
         pairs_machine = None
 
@@ -876,8 +907,7 @@ if len(pair_genomes) > 1:
             f = folder + str(n) + "_network_pickle.sav"
             with open(f, 'wb') as save_net:
                 pickle.dump(net_data[n], save_net)
-
-            s = subprocess.Popen(f'{vRhyme_path}/scripts/network_stuff_threader.py {f} {folder} {bin_size} {refine_m} {max_edges} {n}', shell=True)
+            s = subprocess.Popen(f'{network_stuff_threader} {f} {folder} {bin_size} {refine_m} {max_edges} {n}', shell=True)
             s_set.add(s)
             opened += 1
             if opened == int(threads):

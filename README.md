@@ -12,7 +12,7 @@ University of Wisconsin-Madison
 ```
 
 ## Current Version
-vRhyme v1.0.0
+vRhyme v1.0.0  
 
 ## Citation
 If you find vRhyme useful please consider citing our manuscript on [bioRxiv]():  
@@ -28,8 +28,8 @@ ______
     * Program Dependencies
     * Python3 Dependencies
 5. [Running vRhyme](#run)
-    * Quick run examples
     * Test examples
+    * Quick run examples
 6. [Output Explanations](#out)
     * Useful outputs
     * Other outputs
@@ -42,7 +42,8 @@ ______
 
 ______
 ## Updates for v1.0.0 (December 2021): <a name="updates"></a>
-* Initial release
+* Initial release  
+* Fixed pip install bugs   
 
 
 ______
@@ -50,6 +51,8 @@ ______
 
 #### **vRhyme Description**
 vRhyme is a multi-functional tool for binning virus genomes from metagenomes. vRhyme functions by utilizing coverage variance comparisons and supervised machine learning classification of sequence features to construct viral metagenome-assembled genomes (vMAGs).  
+
+*IMPORTANT NOTE*: vRhyme is built to run on viral sequences/scaffolds. A typical workflow is to predict viruses from a metagenome (e.g., with VIBRANT or VirSorter) and then use those predictions as input to vRhyme. vRhyme can take an entire metagenome as input, but the performance for a whole metagenome has not been fully evaluated. vRhyme is not meant to bin microbes.  
 
 Why "*vRhyme*"? The similarity in sequence features between two scaffolds can be used to identify fragments of the same genome, such as tetranucleotide frequencies, codon usage or GC content. It's almost like rhyming sequences together to create pairs that sound similar, at least metaphorically at the nucleotide level. Coverage variance helps to separate scaffolds that sound the same but are actually different genomes.  
 
@@ -66,24 +69,37 @@ Why "*vRhyme*"? The similarity in sequence features between two scaffolds can be
 
 ______
 ## Installation <a name="install"></a>
-
-#### **GitHub and pip**
+  
+#### **GitHub, pip, and conda**
 1. `git clone https://github.com/AnantharamanLab/vRhyme`  
-2. `cd vRhyme`  
-3. `pip install .`  
-
-Installing with pip in step #3 is optional but suggested. Using pip will collect dependencies and add vRhyme to your system PATH. Without pip, vRhyme can still be executed directly from the git clone, just ensure executable permissions (`chmod +x vRhyme scripts/*.py aux/*.py`). 
-
+2. *optional* create a conda environment (see examples below)  
+3. *optional* activate conda environment if you made one  
+4. `cd vRhyme`  
+5. `pip install .`    *&#8592; NOTE*: don't forget the dot (`pip install [dot]`)  
+  
+Installing with pip is optional but suggested. Using pip will collect Python dependencies and add vRhyme to your system PATH. Note that `vRhyme.egg-info` and `build` should be created after the pip install. Without pip, vRhyme can still be executed directly from the git clone, just ensure executable permissions (`cd vRhyme/; chmod +x vRhyme scripts/*.py aux/*.py`). The conda environment is also optional but can be useful for downloading and managing program dependencies.  
+  
+#### **Example Conda Environments**
+* with pip install  
+   1. `conda create -c bioconda -n vRhyme python=3 samtools mash mummer mmseqs2 prodigal bowtie2 bwa`  
+   2. `conda activate vRhyme`  
+  
+* directly from git clone  
+   1. `conda create -c bioconda -n vRhyme python=3 pandas numpy numba scikit-learn pysam samtools mash mummer mmseqs2 prodigal bowtie2 bwa`  
+   2. `conda activate vRhyme`  
+  
 #### **Test the Installation**
-Test and validate the installed dependencies for vRhyme:  
-`aux/test_vRhyme.py`  
+Test and validate the installed dependencies for vRhyme. In these tests you're looking for *Success* statements. All Python dependencies must be *Success*. Please update them if prompted. Both machine learning models must be *Success*. For program dependencies, only Mmseqs is required to be *Success*, the others are optional depending on vRhyme usage. If you use any coverage input beside `-c` then Samtools is required to be *Success*. If you skip vRhyme `-p` or `-g` flags then Prodigal must be *Success*. If you plan to use vRhyme's dereplication function (see `--method`) then Mash and Nucmer must be *Success*. If you input reads (`-r/-v/-u`) then Bowtie2 and/or BWA (see `--aligner`) must be *Success*.  
+  
+* with pip install  
+   `test_vRhyme.py`  
 
-Print the main vRhyme help menu:  
+* directly from git clone  
+   `aux/test_vRhyme.py`  
+
+Print the main vRhyme help page:  
 `vRhyme -h`  
-
-#### **Example Conda Environment**
-`conda create -n vRhyme python=3 pandas numpy numba scikit-learn pysam samtools mash mummer mmseqs2 prodigal bowtie2 bwa`  
-
+  
 ______
 ## Requirements <a name="require"></a>
 
@@ -109,39 +125,41 @@ There are several Python3 dependencies that must be installed as well. You may a
 2. [Numpy](https://numpy.org/install/) (version >= 1.17.0)
 3. [Scikit-learn](https://scikit-learn.org/stable/install.html) (version >= 0.23.0)
 4. [Numba](https://numba.pydata.org/numba-doc/latest/user/installing.html) (version >= 0.50.0)  
-5. [PySam](https://github.com/pysam-developers/pysam)  
+5. [PySam](https://github.com/pysam-developers/pysam) (version >= 0.15.0)  
 
 
 ______
 ## Running vRhyme <a name="run"></a>
+  
+### Test run examples
+Test out vRhyme on the provided example dataset. *NOTE*: If you choose to not install with pip, the `vRhyme` executable is within the `vRhyme/` subdirectory.   
 
+`cd examples/`  
+
+##### **minimal coverage table input example**
+`vRhyme -i example_scaffolds.fasta -c example_coverage_values.tsv -t 1`  
+  
+##### **full coverage table input example**
+`vRhyme -i example_scaffolds.fasta -o vRhyme_example_results_coverage-table/ -c example_coverage_values.tsv -p example_scaffolds.prodigal.faa -g example_scaffolds.prodigal.ffn -t 2`  
+
+  
 ### Quick run examples
 
 ##### **minimum input example with bam files**
-`vRhyme -i fasta -b bam_folder/*.bam`
-
+`vRhyme -i fasta -b bam_folder/*.bam`  
+  
 ##### **minimum input example with a coverage file**
-`vRhyme -i fasta -c coverage_file.tsv`
-
+`vRhyme -i fasta -c coverage_file.tsv`  
+  
 ##### **full BAM input example**
-`vRhyme -i fasta -g genes -p proteins -b bam_folder/*.bam -t threads -o output_folder/`
-
+`vRhyme -i fasta -g genes -p proteins -b bam_folder/*.bam -t threads -o output_folder/`  
+  
 ##### **reads input example with dereplication**
-`vRhyme -i fasta -g genes -p proteins -r paired_reads_folder/*.fastq -t threads -o output_folder --method longest`
-
+`vRhyme -i fasta -g genes -p proteins -r paired_reads_folder/*.fastq -t threads -o output_folder --method longest`  
+  
 ##### **only use dereplicate function**
-`vRhyme -i input_fasta -t threads -o output_folder/ --derep_only --method longest`
-
-
-### Test run examples
-
-##### **minimal coverage table input example**
-`vRhyme -i example_scaffolds.fasta -c example_coverage_table.tsv -t 1`
-
-##### **full coverage table input example**
-`vRhyme -i example_scaffolds.fasta -o vRhyme_example_results_coverage-table/ -c example_coverage_table.tsv -p example_scaffolds.prodigal.faa -g example_scaffolds.prodigal.ffn -t 5`
-
-
+`vRhyme -i input_fasta -t threads -o output_folder/ --derep_only --method longest`  
+  
 ______
 ## Output Explanations <a name="out"></a>
 
@@ -225,7 +243,7 @@ ______
 
 ##### **Commonly Used**
 ###### (typical usage inputs and options)
-* `-i`: (required) input nucleotide scaffolds (i.e., predicted virus scaffolds from a metagenome assembly).
+* `-i`: (required) input nucleotide scaffolds. For best results, this is predicted virus scaffolds from a metagenome or entire virome assembly. Alternatively, an entire metagenome can be used as input, but this has not been extensively tested.  
 * `-o`: output folder to deposit all results. vRhyme will exit if the folder already exists.
 * `-g`: input nucleotide genes in the format 'name_#'.
 * `-p`: input amino acid proteins genes in the format 'name_#'.
