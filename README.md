@@ -33,12 +33,13 @@ ______
 6. [Output Explanations](#out)
     * Useful outputs
     * Other outputs
-7. [vRhyme Files and Folders](#ff)
-8. [vRhyme Flag Descriptions](#flags)
+7. [Interpreting vRhyme bins/vMAGs](#interpret)
+8. [vRhyme Files and Folders](#ff)
+9. [vRhyme Flag Descriptions](#flags)
     * Flag compatibility
     * Commonly used flags
     * Other flags
-9.  [Contact](#contact)
+10.  [Contact](#contact)
 
 ______
 ## Updates for v1.0.0 (December 2021): <a name="updates"></a>
@@ -212,6 +213,39 @@ ______
         - (sample).sam
 ```
 
+______
+## Interpreting vRhyme bins/vMAGs <a name="interpret"></a>
+
+The following bullet points are guidelines on interpreting binning results from vRhyme. Please note that this list is not exhaustive. For examples and data, please see analyses done in the vRhyme publication.  
+  
+* Use protein redundancy as a metric of contamination
+  * Contamination: a bin containing sequences from multiple viral genomes
+  * Viruses do not encode universal single copy genes and therefore identifying contaminated vMAGs is difficult. For bacteria and archaea, a common practice is to estimate this with the tool CheckM. A useful tool for viruses is CheckV, though CheckV cannot identify if a vMAG contains sequences from multiple viral genomes, though it may identify if the genome is larger than expected. vRhyme implements a "protein redundancy" check for this purpose based on the concept that few viruses encode redundant proteins (e.g., >50% homology). Foremost, protein redundancy is used by vRhyme to construct bins and select the optimal iteration. However, this metric can be used post-binning to filter out bins that are likely contaminated. The vRhyme publication has a supplemental figure for this topic. 
+    * Bins unlikely to be contaminated will have 0-1 redundant proteins. 
+    * Bins with approximately 2-5 redundant proteins may not be contaminated but there are few such examples. 
+    * Bins with >6 redundant proteins are often contaminated. Notable exceptions include NCLDVs, which can have ~10 redundant proteins in an uncontaminated bin. 
+* Expected bin sizes
+  * Bin size: number of sequences (members)
+  * Most vRhyme bins will be just 2-3 members
+  * Although some viruses require binning to reconstruct fragmented genomes, there typically aren't many fragments to put back together. Most vRhyme bins will be just 2-3 members and few will exceed 4 members. However, a bin with >4 members should not automatically cause skepticism. In benchmarks, several examples of uncontaminated bins with >4 members were identified. Two examples detailed in the vRhyme publication are a 22-member Herelleviridae vMAG (115kb) and an 11-member NCLDV vMAG (1.6Mb). A megaphage (540kb) artificially split into 51 fragments generated a respective 51-member bin. 
+* Unbinned sequences are still useful
+  * Unbinned sequences: any input viral sequence that was not placed into a bin
+  * Not all viral genomes will require binning and will remain as individual sequences. There is still high utility in unbinned viral sequences as they may accurately represent a viral population/genome. Any unbinned sequence or unused bin (e.g., individual members from bins with contamination) should be combined with the vMAGs for analyses. 
+* Prophages can be difficult to bin
+  * Prophage: temperate phage integrated into the host genome
+  * Prophages can be dormant (non-replicating) or active (replicating)
+  * Multiple prophages integrated into the same host genome can cause difficulties if the prophages are dormant. When dormant, read coverage of each prophage generally matches that of the host. Therefore, vRhyme is likely to take multiple prophage genomes from the same host and bin them together, creating a contaminated bin. However, if one or more prophages are active then their read coverages will be distinct and typically lead to accurate binning. There are at least two ways to identify this: 
+    * a bin with >1 redundant proteins that encodes 2 integrases, with each integrase on a different sequence
+    * a bin with 2 or more sequences that were excised from the same parent sequence, but the excised sequences are not closely localized on the parent sequence. In this example, the parent sequence would be the host and the excised sequences are the predicted prophages. If the predicted prophages are not near each other on the parent then they are likely unique genomes. If they are very near each other on the parent then they may actually be one prophage that was incorrectly split in two. 
+* Lytic and lysogenic viruses can bin together
+  * Lytic cycle: productive infection that leads to release of viral particles; strictly lytic viruses do not integrate
+  * Lysogenic cycle: non-productive infection where viral particles are not released; lysogenic viruses integrate and are dormant until entering the lytic cycle (some exceptions); often encode an integrase
+  * When viewing binned sequences that have "lysogenic/lytic" labels from another software (e.g., VIBRANT, VirSorter) it may seem concerning to see a lytic virus bin with a lysogenic virus. Although this may be reason to be skeptical of contamination, here are some explanations of what may be occurring:
+    * software tools that label lysogenic/lytic can make mistakes or be misled. For example, if a sequence does not encode an integrase or other lysogenic features then VIBRANT will label it as "lytic". If this is a virus genome fragment and another fragment of the same genome (different sequence) contains an integrase then that other fragment will be labeled as "lysogenic". When binning, those two sequence can be place into the same bin by vRhyme to produce an accurate bin with a lytic and lysogenic member.
+    * A bin with one or more lytic members and one lysogenic member should not cause concern.
+    * A bin with one or more lytic members and one integrated prophage should be examined.
+    * A bin with two or more lysogenic members, each encoding an integrase, is likely contamination.
+    * A bin with two or more integrated prophages, regardless of integrases, from multiple parent sequences is likely contamination.
 
 ______
 ## vRhyme files and folders <a name="ff"></a>
@@ -295,7 +329,7 @@ ______
 * `--min_kmer`: minimum k-mer distance for pre-filtering. The default is 0.60. This is the calculated distance between two scaffolds' tetranucleotide frequencies. Scaffolds that are more alike will have higher values (e.g., >0.80) and those that are more dissimilar will be lower (e.g., <0.40). Increasing this value (e.g., 0.70 or 0.80) will minorly increase speed for large datasets because fewer scaffolds will be compared with more computationally expensive tasks. Setting this value to 0.00 will turn off any filtering. Setting this value too high (e.g., >0.90) may greatly reduce recall but only the most similar scaffolds by k-mer usage will be compared.
 * `--max_edges`: maximum number of edges per node in network clustering. The default is 6. Lowering this value will decrease connections between scaffolds and increase the reliability of the connections at the expense of false negative interactions. With values lower than 4 large viral genomes will likely be split between bins if highly fractionated. 
 * `--penalty_w`: penalty weight for Cohen's *d* distance calculations. The default is 0.20. Each Cohen's *d* value is compared to the respective preset threshold (see `--iter`). Any values greater than the threshold are given a penalty. Lower penalty weights will be less sensitive to coverage differences between scaffolds, and likewise greater penalty weights will be more strict. 
-* `--penalty_n`: maximum number of penalties for Cohen's *d* distance calculations. The default is 2. Each Cohen's *d* value is compared to the respective preset threshold (see `--iter`). Any values greater than the threshold are given a penalty. Increasing the maximum allowed penalties will be less sensitive to coverage differences between scaffolds, and likewise decreasing maximum allowed penalties will be more strict.
+* `--penalty_n`: maximum number of penalties for Cohen's *d* distance calculations. The default is 2. Each Cohen's *d* value is compared to the respective preset threshold (see `--iter`). Any values greater than the threshold are given a penalty. Increasing the maximum allowed penalties will be less sensitive to coverage differences between scaffolds (higher chance of false positive), and likewise decreasing maximum allowed penalties will be more strict (lower chance of false positive).
 * `--mems`: refine bins with at least N members. The default is 4. Any potential bin with at least N members will be subject to bin refinement. Decreasing this value typically has minimal effects. Increasing this value may lead to greater contamination, but be less likely to refine (e.g., split apart) large viral genomes with many scaffolds. 
 
 ##### **Dereplication**
