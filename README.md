@@ -15,7 +15,7 @@ University of Wisconsin-Madison
 vRhyme v1.0.0  
 
 ## Citation
-If you find vRhyme useful please consider citing our manuscript on [bioRxiv]():  
+If you find vRhyme useful please consider citing our manuscript on [bioRxiv](https://doi.org/10.1101/2021.12.16.473018):  
 Kieft, K., Adams, A., Salamzade, R., Kalan, L., & Anantharaman, K. vRhyme enables binning of viral genomes from metagenomes. bioRxiv, 2021.  
 
 ______
@@ -236,7 +236,7 @@ The following bullet points are guidelines on interpreting binning results from 
   * Prophages can be dormant (non-replicating) or active (replicating)
   * Multiple prophages integrated into the same host genome can cause difficulties if the prophages are dormant. When dormant, read coverage of each prophage generally matches that of the host. Therefore, vRhyme is likely to take multiple prophage genomes from the same host and bin them together, creating a contaminated bin. However, if one or more prophages are active then their read coverages will be distinct and typically lead to accurate binning. There are at least two ways to identify this: 
     * a bin with >1 redundant proteins that encodes 2 integrases, with each integrase on a different sequence
-    * a bin with 2 or more sequences that were excised from the same parent sequence, but the excised sequences are not closely localized on the parent sequence. In this example, the parent sequence would be the host and the excised sequences are the predicted prophages. If the predicted prophages are not near each other on the parent then they are likely unique genomes. If they are very near each other on the parent then they may actually be one prophage that was incorrectly split in two. 
+    * a bin with 2 or more sequences that were excised from the same parent sequence, but the excised sequences are not closely localized on the parent sequence. In this example, the parent sequence would be the host and the excised sequences are the predicted prophages. If the predicted prophages are not near each other on the parent then they are likely unique genomes. If they are very near each other on the parent then they may actually be one prophage that was incorrectly split in two by the prophage identification tool. 
 * Lytic and lysogenic viruses can bin together
   * Lytic cycle: productive infection that leads to release of viral particles; strictly lytic viruses do not integrate
   * Lysogenic cycle: non-productive infection where viral particles are not released; lysogenic viruses integrate and are dormant until entering the lytic cycle (some exceptions); often encode an integrase
