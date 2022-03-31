@@ -34,7 +34,6 @@ def test_packages():
             failed = True
             sys.stdout.write(f'\033[1m> {p}: Not Found!\033[0m\n')
     if failed:
-        sys.stdout.write('\n  Python Dependencies\n  -------------------\n')
         sys.stderr.write(f"Error: Please update/install indicated dependencies. Exiting.\n")
         exit(1)
     import networkx as nx # test import
