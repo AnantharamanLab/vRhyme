@@ -3,7 +3,8 @@
 # Author: Kristopher Kieft
 # University of Wisconsin-Madison
 
-
+import warnings
+warnings.simplefilter("ignore")
 import collections
 import itertools
 from numba import jit

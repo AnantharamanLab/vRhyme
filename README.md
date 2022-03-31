@@ -4,7 +4,7 @@
 ### Binning Virus Genomes from Metagenomes
 
 ```
-December 2021   
+March 2022   
 Kristopher Kieft  
 kieft@wisc.edu  
 Anantharaman Lab  
@@ -12,7 +12,7 @@ University of Wisconsin-Madison
 ```
 
 ## Current Version
-vRhyme v1.0.0  
+vRhyme v1.1.0  
 
 ## Citation
 If you find vRhyme useful please consider citing our manuscript on [bioRxiv](https://doi.org/10.1101/2021.12.16.473018):  
@@ -21,7 +21,8 @@ Kieft, K., Adams, A., Salamzade, R., Kalan, L., & Anantharaman, K. vRhyme enable
 ______
 ## Table of Contents:
 1. [Updates](#updates)
-    * **v1.0.0**
+    * **v1.1.0**
+    * v1.0.0
 2. [Program Description](#program)
 3. [Installation](#install)
 4. [Requirements](#require)
@@ -42,6 +43,18 @@ ______
 10.  [Contact](#contact)
 
 ______
+## Updates for v1.1.0 (March 2022): <a name="updates"></a>
+* Added coverage outlier removal
+* Added circular scaffold (i.e., complete viral genome) removal pre-binning
+* Added auxiliary script for identifying circular scaffolds
+* Added new dependency: networkx
+* Modified --max_edges from a default of 6 to an automatic dynamic range of 3-6
+* Modified --penalty_n maximum to be <30% of the number of input samples
+* Modified setup and fixed setup bugs
+* Replaced MiniBatchKMeans bin refinement with Label Propagation (networkx)
+* Resolved bug associated with generating non-connected networks of bins during refinement
+
+
 ## Updates for v1.0.0 (December 2021): <a name="updates"></a>
 * Initial release  
 * Fixed pip install bugs   
@@ -73,10 +86,11 @@ ______
   
 #### **GitHub, pip, and conda**
 1. `git clone https://github.com/AnantharamanLab/vRhyme`  
-2. *optional* create a conda environment (see examples below)  
-3. *optional* activate conda environment if you made one  
-4. `cd vRhyme`  
-5. `pip install .`    *&#8592; NOTE*: don't forget the dot (`pip install [dot]`)  
+2. `cd vRhyme`
+3. `gunzip vRhyme/models/vRhyme_machine_model_ET.sav.gz`    *&#8592; NOTE*: `vRhyme` is a subdirectory of the parent `vRhyme`
+4. *optional* create a conda environment (see examples below)  
+5. *optional* activate conda environment if you made one  
+6. `pip install .`    *&#8592; NOTE*: don't forget the dot (`pip install [dot]`)  
   
 Installing with pip is optional but suggested. Using pip will collect Python dependencies and add vRhyme to your system PATH. Note that `vRhyme.egg-info` and `build` should be created after the pip install. Without pip, vRhyme can still be executed directly from the git clone, just ensure executable permissions (`cd vRhyme/; chmod +x vRhyme scripts/*.py aux/*.py`). The conda environment is also optional but can be useful for downloading and managing program dependencies.  
   
@@ -86,7 +100,7 @@ Installing with pip is optional but suggested. Using pip will collect Python dep
    2. `conda activate vRhyme`  
   
 * directly from git clone  
-   1. `conda create -c bioconda -n vRhyme python=3 pandas numpy numba scikit-learn pysam samtools mash mummer mmseqs2 prodigal bowtie2 bwa`  
+   1. `conda create -c bioconda -n vRhyme python=3 networkx pandas numpy numba scikit-learn pysam samtools mash mummer mmseqs2 prodigal bowtie2 bwa`  
    2. `conda activate vRhyme`  
   
 #### **Test the Installation**
@@ -127,6 +141,7 @@ There are several Python3 dependencies that must be installed as well. You may a
 3. [Scikit-learn](https://scikit-learn.org/stable/install.html) (version >= 0.23.0)
 4. [Numba](https://numba.pydata.org/numba-doc/latest/user/installing.html) (version >= 0.50.0)  
 5. [PySam](https://github.com/pysam-developers/pysam) (version >= 0.15.0)  
+6. [NetworkX](https://networkx.org/) (version >= 2.0)  
 
 
 ______
@@ -173,6 +188,7 @@ ______
 #### **Other outputs**
 * *log_vRhyme_paired_reads.log*: log of which reads files were paired together with `-r`. Exists with `-r`. 
 * *(-i).prodigal.faa*/*(-i).prodigal.ffn*: proteins/genes predicted by Prodigal for the length-filtered input sequences. Exists in the absense of `-p/-g`.
+* *(-i).circular.tsv*: list of input scaffolds that are circular (i.e., complete viral genomes). The terminal repeat (TR) type can be direct (DTR) or inverted (ITR). vRhyme will check for repeat lengths of at least 20bp and up to 2 mismatches; turn off with --keep_circ. The auxiliary script `aux/flag_circular.py` performs the same function and allows for modified parameters.  
 * *vRhyme_machine_distances.tsv*: raw distance calculation values used as input for the machine learning model(s)
 * *vRhyme_coverage_files*: folder containing one file per sample with coverage values per scaffold. The row names can be found in *vRhyme_names.txt*. *vRhyme_coverage_values.tsv* is the combination of all sample coverages and is equivalent to `-c`. Does not exist with `-c`. 
 * *vRhyme_alternate_bins*: folder containing membership and summary files for each alternative binning iteration. *vRhyme_bin_scoring.tsv* contains the scoring information and rationale for the best iteration chosen as the best bins. 
@@ -190,6 +206,7 @@ ______
     - log_vRhyme_paired_reads.log *
     - (-i).prodigal.faa *
     - (-i).prodigal.ffn *
+    - (-i).circular.tsv
     - vRhyme_best_bins.#.membership.tsv
     - vRhyme_best_bins.#.summary.tsv
     - vRhyme_machine_distances.tsv
@@ -256,6 +273,7 @@ ______
     * *bin_coverage.py*: calculate the average coverage of a bin per sample (combined averages of all bin members).
     * *coverage_table_convert.py*: convert a MetaBat2 'jgi_summarize_bam_contig_depths' generated coverage table into vRhyme format for -c input.
     * *extract_unbinned_sequences.py*: extract unbinned scaffolds into a separate fasta file.
+    * *flag_circular.py*: Identify scaffolds that are circular (i.e., complete viral genomes) from an input fasta file or within bins. The terminal repeat (TR) type can be direct (DTR) or inverted (ITR). vRhyme performs the same function (default settings) pre-binning.  
     * *generate_bin_scores.py*: calculate vRhyme-equivalent scores per bin. This script will run the same protein redundancy and scoring method implemented by vRhyme. Note that in the output table the score will be listed in the final row. 
     * *link_bin_sequences.py*: link scaffolds within a bin to generate a single sequence per bin. This may be useful for CheckV input. Note that after linking scaffolds, if Prodigal is used to predict open reading frames the Prodigal `-m` flag should be used. 
     * *sequence_lengths_of_bins.py*: calculate the total nucleotide length of each bin.
@@ -320,16 +338,17 @@ ______
 
 ##### **Bin Filters**
 ###### (these typically do not need to be modified)
+* `--outliers`: remove outlier coverage values <val> standard deviations above the average coverage. The default is 4.0. A value between 3 and 4 are suggested, or lower if the coverage is expected to be exceptionally variable. Set to 0 to turn off. This flag is not compatible with the `-c` coverage table input. 
 * `--bin_size`: minimum number of scaffolds per bin. The default is 2. For example, setting this to 5 means all reported bins must contain at least 5 scaffolds. Low values, such as 2, are best for binning viruses that have smaller genomes.
-* `--iter`: number of binning iterations (presets) to run. The default is 10 and the available range is 8-15. The presets are immutable threshold settings for the machine learning model probability, Cohen's *d* coverage effect size, and network edge weight cutoffs. Each iteration will run a single preset. The minimum setting of 8 is usually sufficient to identify the best binning iteration. There is a maximum of 15 possible presets. Setting `--iter` higher (e.g., 15) has a slight reduction in speed and provides a better opportunity to identify the best binning iteration, though the presets that typically result in the best binning iterations are 0 to 7.
+* `--iter`: number of binning iterations (presets) to run. The default is 20 and the available range is 10-20. The presets are immutable threshold settings for the machine learning model probability, Cohen's *d* coverage effect size, and network edge weight cutoffs. Each iteration will run a single preset. The minimum setting of 10 is usually sufficient to identify the best binning iteration, though there isn't a significant effect on runtime by leaving this at the default maximum of 20.
 * `--red`: maximum number of redundant proteins per bin. The default is 50. This is a cutoff for how many of a bin's proteins can be redundant for generating/reporting the bin. The default of 50 means most bins are reported. For example, setting `--red 1` would result in only creating bins with <=1 redundant protein, which is a typical low-contamination bin. Redundant proteins contained on a single scaffold are not considered redundant. Modifying this value does not impact how bins are formed, only how bins are reported. Redundancy per bin is reported to allow for filtering post-binning. Note that some eukaryotic viruses, and few prokaryotic viruses, can normally have up to 10 redundant proteins. Uncommon exceptions may have greater than 10. 
-* `--cov`: coverage threshold to consider scaffold as present in sample. The default is 0.90. Any scaffold with an average coverage below this threshold is not considered as present. Typically, lowering this value increases recall along with contamination, whereas increasing this value lowers recall and contamination.
+* `--cov`: coverage threshold to consider scaffold as present in sample. The default is 0.80. Any scaffold with an average coverage below this threshold is not considered as present. Typically, lowering this value increases recall along with contamination, whereas increasing this value lowers recall and contamination.
 * `--model`: machine learning model(s) to use. The default is 'hybrid', which means both the Neural Network (NN) and Extra Trees (ET) models are used. There is a minor reduction in runtime when using both models, but it is more accurate than either on their own. When both models are used the probability output from both models needs to meet the given threshold.
 * `--max_gc`: maximum GC distance for pre-filtering. The default is 0.20. This is the difference in %GC between two scaffolds being compared. Scaffolds from the same genome tend to have similar GC content. Lowering this value (e.g., 0.10 or 0.15) will minorly increase speed for large datasets because fewer scaffolds will be compared with more computationally expensive tasks. Setting this value to 1.00 will turn off any filtering.
 * `--min_kmer`: minimum k-mer distance for pre-filtering. The default is 0.60. This is the calculated distance between two scaffolds' tetranucleotide frequencies. Scaffolds that are more alike will have higher values (e.g., >0.80) and those that are more dissimilar will be lower (e.g., <0.40). Increasing this value (e.g., 0.70 or 0.80) will minorly increase speed for large datasets because fewer scaffolds will be compared with more computationally expensive tasks. Setting this value to 0.00 will turn off any filtering. Setting this value too high (e.g., >0.90) may greatly reduce recall but only the most similar scaffolds by k-mer usage will be compared.
-* `--max_edges`: maximum number of edges per node in network clustering. The default is 6. Lowering this value will decrease connections between scaffolds and increase the reliability of the connections at the expense of false negative interactions. With values lower than 4 large viral genomes will likely be split between bins if highly fractionated. 
+* `--max_edges`: maximum number of edges per node in network clustering. The default is a dynamic range between 3 and 6 (int) depending on the number of input scaffolds (max_edgs = -0.001x + 6.125, where x is input scaffolds). Lowering this value will decrease connections between scaffolds and increase the reliability of the connections at the expense of false negative interactions. With values lower than 4, large viral genomes may be split between bins if highly fractionated but complex viromes are binned more reliably. 
 * `--penalty_w`: penalty weight for Cohen's *d* distance calculations. The default is 0.20. Each Cohen's *d* value is compared to the respective preset threshold (see `--iter`). Any values greater than the threshold are given a penalty. Lower penalty weights will be less sensitive to coverage differences between scaffolds, and likewise greater penalty weights will be more strict. 
-* `--penalty_n`: maximum number of penalties for Cohen's *d* distance calculations. The default is 2. Each Cohen's *d* value is compared to the respective preset threshold (see `--iter`). Any values greater than the threshold are given a penalty. Increasing the maximum allowed penalties will be less sensitive to coverage differences between scaffolds (higher chance of false positive), and likewise decreasing maximum allowed penalties will be more strict (lower chance of false positive).
+* `--penalty_n`: maximum number of penalties for Cohen's *d* distance calculations. The default is 10 with a maximum of <30% of input sequences. Each Cohen's *d* value is compared to the respective preset threshold (see `--iter`). Any values greater than the threshold are given a penalty. Increasing the maximum allowed penalties will be less sensitive to coverage differences between scaffolds (higher chance of false positive), and likewise decreasing maximum allowed penalties will be more strict (lower chance of false positive).
 * `--mems`: refine bins with at least N members. The default is 4. Any potential bin with at least N members will be subject to bin refinement. Decreasing this value typically has minimal effects. Increasing this value may lead to greater contamination, but be less likely to refine (e.g., split apart) large viral genomes with many scaffolds. 
 
 ##### **Dereplication**
@@ -377,7 +396,7 @@ ______
 ## Copyright  
 
 vRhyme
-Copyright (C) 2021 Kristopher Kieft
+Copyright (C) 2022 Kristopher Kieft
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

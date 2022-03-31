@@ -1,0 +1,48 @@
+Command:  /opt/anaconda3/envs/vRhyme_dev/bin/vRhyme -i example_scaffolds.fasta -p example_scaffolds.prodigal.faa -g example_scaffolds.prodigal.ffn -c example_coverage_values.tsv -o vRhyme_v1.1.0_example_output -t 2
+
+Date:     2022-03-30 (y-m-d)
+Start:    12:54:06   (h:m:s)
+Program:  vRhyme v1.1.0
+
+
+Time (min) |  Log                                                   
+--------------------------------------------------------------------
+0.0           Initializing and validating vRhyme parameters
+0.02          Performing pairwise coverage comparisons
+0.03          Generating codon usage features
+0.05          Generating nucleotide features
+0.06          Performing pairwise distance calculations
+0.07          Performing machine learning classification
+0.08          Generating networks of bins
+0.17          Extracting information for all possible unique bins
+0.17          Running mmseqs2 linclust for bin redundancy scoring
+0.17          Parsing linclust protein clusters
+0.17          Scoring all possible unique bins
+0.17          Identifying best set of bins from 20 iterations
+0.17          Extracting binning summary statistics for each iteration
+0.18          Writing finalized bin sequences to individual fasta files
+0.18          vRhyme binning complete
+
+Memory usage:       382.07
+Runtime (min):      0.18
+Bins generated:     2
+Binned sequences:   8 (80.0%)
+Input sequences:    10
+Binned proteins:    136
+Redundant proteins: 0 (0.0%)
+Best iteration:     0
+vRhyme score:       0.7375
+
+
+______________________________________________________________________
+
+             ## ## ## ##                                              
+             ##       ##  ##      ##     ##    ## ## ##     # ## ##   
+##       ##  ##       ##  ##       ##    ##  ##   ##   ##  ##      #  
+ ##     ##   ##     ##    ##         ## ##   ##   ##   ##  ## ## ##   
+  ##   ##    ## ####      ## ## ##     ##    ##   ##   ##  ##         
+   ## ##     ##   ##      ##    ##    ##     ##   ##   ##  ##         
+    ###      ##     ##    ##    ##   ##      ##   ##   ##   ## ## ##  
+______________________________________________________________________
+
+

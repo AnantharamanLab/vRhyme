@@ -24,7 +24,7 @@ def test_packages():
     sys.stdout.write('\n  Python Dependencies\n  -------------------\n')
     packages = {str(p).split(' ')[0]:str(p).split(' ')[1] for p in pkg_resources.working_set}
     packages_names = set(packages.keys())
-    test = {'scikit-learn': 0.23, 'numpy': 1.17, 'numba': 0.50, 'pandas': 1.0, 'pysam': 0.15}
+    test = {'scikit-learn': 0.23, 'numpy': 1.17, 'numba': 0.50, 'pandas': 1.0, 'pysam': 0.15, 'networkx': 2.0}
     for p,v in test.items():
         if p in packages_names:
             ver = packages[p]

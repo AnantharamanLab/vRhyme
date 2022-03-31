@@ -534,7 +534,6 @@ def nucmer_filter_2_stuff(iteration, nuc_split, merge_cov, nuc_g, folder):
                 cov1 = 0
                 cov2 = 0
                 o = 0
-            #n += 15
 
     subprocess.run("rm " + folder + "vRhyme_dereplication/vRhyme_nucmer_delta_filtered.tsv 2> /dev/null", shell=True)
     subprocess.run("rm " + folder + "vRhyme_dereplication/vRhyme_nucmer_delta_parsed.tsv 2> /dev/null", shell=True)
@@ -710,7 +709,6 @@ def nucmer_filter_4_stuff(original_dict, derep_frac, folder):
 
         names = None
 
-        clust_dict = {}
         for names in bins.values():
             len_list = [len_dict[i] for i in names]
             z = list(zip(names,len_list))
@@ -805,6 +803,7 @@ def derep_stuff_composite(in_fasta, threads, interest_list, folder, base, derep_
             with open(folder + 'vRhyme_dereplication/vRhyme_derep_indentical-seqs_' + base + '.tsv', 'w') as ident_seq:
                 ident_seq.write("parent\tmembers ->")
                 for item,val in clusters_100_dict.items():
+                    val = [v.replace("~#~"," ") for v in val]
                     ident_seq.write("\n" + item.replace("~#~"," ") + "\t" + "\t".join(val))
 
         if len(composite_dict.keys()) > 0:
@@ -813,6 +812,7 @@ def derep_stuff_composite(in_fasta, threads, interest_list, folder, base, derep_
                 comp_seq.write("parent\tmembers ->")
                 for item,val in composite_dict.items():
                     if item in set_seqs:
+                        val = [v.replace("~#~"," ") for v in val]
                         comp_seq.write("\n" + item.replace("~#~"," ") + "\t" + "\t".join(val))
                         comp_list.write("\n".join(val) + "\n")
 
@@ -863,12 +863,14 @@ def derep_stuff_longest(in_fasta, threads, interest_list, folder, base, derep_le
             with open(folder + 'vRhyme_dereplication/vRhyme_derep_overlap-seqs_' + base + '.tsv', 'w') as ident_seq:
                 ident_seq.write("parent\tmembers ->")
                 for item,val in longest_dict.items():
+                    val = [v.replace("~#~"," ") for v in val]
                     ident_seq.write("\n" + item.replace("~#~"," ") + "\t" + "\t".join(val))
 
         if clusters_100_dict:
             with open(folder + 'vRhyme_dereplication/vRhyme_derep_indentical-seqs_' + base + '.tsv', 'w') as ident_seq:
                 ident_seq.write("parent\tmembers ->")
                 for item,val in clusters_100_dict.items():
+                    val = [v.replace("~#~"," ") for v in val]
                     ident_seq.write("\n" + item.replace("~#~"," ") + "\t" + "\t".join(val))
 
         subprocess.run("rm -R " + folder + "vRhyme_dereplication/split_fasta_files 2> /dev/null", shell=True)

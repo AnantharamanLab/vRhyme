@@ -3,6 +3,8 @@
 # Author: Kristopher Kieft
 # University of Wisconsin-Madison
 
+import warnings
+warnings.simplefilter("ignore")
 import sys
 import collections
 import itertools

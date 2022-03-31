@@ -33,7 +33,7 @@ def uniques_stuff(folder):
             total = 0
             iter_bins = 0
             for line in file: # each line is a bin
-                mems = [int(m) for m in line.split('\t')]
+                mems = [int(m) for m in line.strip('\n').split('\t')]
                 mems.sort()
                 uniques.setdefault(tuple(mems),[bins]).append(iteration)
                 bins += 1

@@ -15,14 +15,22 @@ import pysam
 
 
 @jit(nopython=True)
-def quick_stats(depth):
+def quick_stats(depth, outliers):
     '''
-    Average and standard deviation
+    Average and standard deviation.
+    Remove outliers.
     '''
     a = 0
     s = 0
     a = np.mean(depth)
     s = np.std(depth)
+
+    if outliers and s >= outliers:
+        dist = np.absolute(depth-a)
+        depth = depth[dist < outliers*s]
+        a = np.mean(depth)
+        s = np.std(depth)
+
     return a,s
 
 @jit(nopython=True)
@@ -44,7 +52,7 @@ def add_depth_no_ed(depth, start, end):
         depth[i] += 1
     return depth
 
-def coverage_stuff(alignment, mask, keep, folder, read_id):
+def coverage_stuff(alignment, mask, keep, folder, read_id, outliers):
     '''
     Read BAM files, sort and index if necessary,
     and main wrapper for calculating coverage per scaffold,
@@ -97,7 +105,7 @@ def coverage_stuff(alignment, mask, keep, folder, read_id):
             if length: # not in keep
                 try:
                     if genome != prev:
-                        avg, sd = quick_stats(depth)
+                        avg, sd = quick_stats(depth, outliers)
                         master[prev] = (avg,sd)
                         depth = np.zeros(length)
                 except NameError:
@@ -121,7 +129,7 @@ def coverage_stuff(alignment, mask, keep, folder, read_id):
         if length: # not in keep
             # last one
             depth = depth[mask_f:mask_r]
-            avg, sd = quick_stats(depth)
+            avg, sd = quick_stats(depth, outliers)
             master[prev] = (avg,sd) # will break if there's only a single read aligned
             depth = None
     else: # no mismatches
@@ -132,7 +140,7 @@ def coverage_stuff(alignment, mask, keep, folder, read_id):
                 try:
                     if genome != prev:
                         depth = depth[mask_f:mask_r]
-                        avg, sd = quick_stats(depth)
+                        avg, sd = quick_stats(depth, outliers)
                         master[prev] = (avg,sd)
                         depth = np.zeros(length)
                 except NameError:
@@ -147,7 +155,7 @@ def coverage_stuff(alignment, mask, keep, folder, read_id):
         if length != None: # not in keep
             # last one
             depth = depth[mask_f:mask_r]
-            avg, sd = quick_stats(depth)
+            avg, sd = quick_stats(depth, outliers)
             master[prev] = (avg,sd) # will break if there's only a single read aligned
             depth = None
 
@@ -169,10 +177,11 @@ if __name__ == '__main__':
         mask = None
     folder = sys.argv[3]
     read_id = float(sys.argv[4])
+    outliers = float(sys.argv[5])
     with open(folder + "keep_pickle.sav", 'rb') as read_keep:
         keep = pickle.load(read_keep)
 
-    coverage_stuff(sys.argv[1], mask, keep, folder, read_id)
+    coverage_stuff(sys.argv[1], mask, keep, folder, read_id, outliers)
 
 #
 #

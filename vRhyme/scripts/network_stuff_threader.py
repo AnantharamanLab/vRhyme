@@ -6,8 +6,8 @@
 import subprocess
 import pickle
 import sys
-from sklearn.cluster import MiniBatchKMeans
-from itertools import combinations
+import networkx as nx
+from networkx.algorithms.community import label_propagation_communities
 
 
 def edge_check(x,y,max_edges):
@@ -19,35 +19,6 @@ def edge_check(x,y,max_edges):
         check = True
 
     return check
-
-def cc_calc(Nv,Kv,k):
-    '''
-    Calculate clustering coefficient.
-    0.36 is an optimized constant
-    '''
-    cc = (2*Nv)/(Kv*(Kv-1))
-    if cc <= 0.36 and cc > 0:
-        k += 1
-    return k
-
-def cluster_coeff(names,data):
-    '''
-    Generate information for clustering coefficient calculation
-    '''
-    data = set(data)
-    k = 1
-    for x in names:
-        neighbors = set([d[1] for d in data if d[0] == x] + [d[0] for d in data if d[1] == x])
-        Kv = len(neighbors)
-        
-        if Kv > 1:
-            pairs = [tuple(map(int, comb)) for comb in combinations(neighbors, 2)]
-            overlaps = [p for p in pairs if p in data] + [p for p in pairs if (p[1],p[0]) in data]
-            Nv = len(overlaps)
-            k = cc_calc(Nv,Kv,k)
-
-    return k
-
 
 def network_stuff(net_data, folder, bin_size, refine_m, max_edges, iteration):
     '''
@@ -62,9 +33,7 @@ def network_stuff(net_data, folder, bin_size, refine_m, max_edges, iteration):
 
     counter = {}
     data = []
-    edge_list = []
     bins = {}
-    edges = {}
     duos = {}
     b = 1
 
@@ -89,21 +58,17 @@ def network_stuff(net_data, folder, bin_size, refine_m, max_edges, iteration):
 
         check = edge_check(q,s,max_edges)
         if check == True:
-            edge = item[2]
             added = False
-            for key in bins:
-                value = bins[key]
+            for key,value in bins.items():
                 if qry in value or sbj in value:
                     value.update([qry,sbj])
                     bins[key] = value
-                    edges[key].append(edge)
                     duos[key].append((qry,sbj))
                     added = True
                     break
 
             if added == False:
                 bins[b] = set([qry,sbj])
-                edges[b] = [edge]
                 duos[b] = [(qry,sbj)]
                 b += 1
 
@@ -127,11 +92,9 @@ def network_stuff(net_data, folder, bin_size, refine_m, max_edges, iteration):
                         x_values = x_values.union(y_values)
                         bins[x] = x_values
                         duos[x].extend(duos[y])
-                        edges[x].extend(edges[y])
 
                         del bins[y]
                         del duos[y]
-                        del edges[y]
                         alter = True
 
                 except Exception:
@@ -142,67 +105,24 @@ def network_stuff(net_data, folder, bin_size, refine_m, max_edges, iteration):
             break
 
     names = None
-    delete_bins = []
-    sort_duos = {}
-
-    for key,names in bins.items():
-        mems = len(names)
-        if mems >= bin_size:
-            zip_duo_w = list(zip(duos[key],edges[key]))
-            zip_duo_w.sort(key=lambda x: x[1])
-            sort_duos[key] = zip_duo_w
-        else:
-            delete_bins.append(key)
-
-    delete_bins = set(delete_bins)
-    for k in delete_bins:
-        del bins[k]
-
-    delete_bins = None
-    edges = None
-    duos = None
-
     final_bins = {}
     b = 1
-    for key,data in sort_duos.items():
-        data = [i[0] for i in data]
+    for key,data in duos.items():
         names = bins[key]
         ln = len(names)
-        k = cluster_coeff(names,data) 
 
-        removed = set()
-        if k >= 3 and ln >= refine_m:
-            batch = int(ln * 0.25)
-            if batch < 2:
-                batch = 2
-            elif batch > 100:
-                batch = 100
-            clstr = MiniBatchKMeans(n_clusters=k, random_state=4, batch_size=batch, max_iter=100, verbose=0, max_no_improvement=5, n_init=5)
+        if ln >= refine_m:
+            G = nx.Graph(data)
+            comm = label_propagation_communities(G)
 
-            labels = clstr.fit_predict(data)
-            zz = list(zip(data,labels))
-            l = set(labels)
-            temp_bins = {i:[] for i in l}
-
-            for z in zz:
-                l = z[1]
-                val = z[0]
-                d1 = val[0]
-                d2 = val[1]
-                if d1 not in removed:
-                    temp_bins[l].append(d1)
-                    removed.add(d1)
-                if d2 not in removed:
-                    temp_bins[l].append(d2)
-                    removed.add(d2)
-
-            for t in temp_bins.values():
-                if len(t) >= bin_size:
-                    final_bins[b] = set(t)
+            for new_bin in comm:
+                if len(new_bin) >= bin_size:
+                    final_bins[b] = set(new_bin)
                     b += 1
         else:
-            final_bins[b] = names
-            b += 1
+            if ln >= bin_size:
+                final_bins[b] = names
+                b += 1
 
     with open(folder + iteration + ".vRhyme-bins.tsv", "w") as net_out:
         s = 0
@@ -217,7 +137,6 @@ def network_stuff(net_data, folder, bin_size, refine_m, max_edges, iteration):
     b = len(final_bins)
     bins = None
 
-
 if __name__ == '__main__':
     folder = sys.argv[2]
     bin_size = int(sys.argv[3])
@@ -231,7 +150,6 @@ if __name__ == '__main__':
     network_stuff(net_data, folder, bin_size, refine_m, max_edges, iteration)
 
     subprocess.run('rm ' + sys.argv[1], shell=True)
-
 
 #
 #

@@ -8,6 +8,7 @@ warnings.filterwarnings("ignore")
 import pandas as pd
 import pickle
 from numba import jit
+import numpy as np
 import os
 import sys
 
@@ -47,14 +48,14 @@ def cd_compare(p, c, network):
     '''
     Generate the probability cutoff and compare to maximum threshold
     '''
-    r = c/p
+    r = (-1/np.log(c))/p
     r_check = False
     if r <= network:
         r_check = True
     return r_check, r
 
 
-def machine_stuff(metrics, presets, model_method, new_pairs, cohen_list, iterations):
+def machine_stuff(metrics, presets, model_method, new_pairs, cohen_list, iterations, cohen_check):
     '''
     Main wrapper for machine learning and cutoff checks
     '''
@@ -95,7 +96,10 @@ def machine_stuff(metrics, presets, model_method, new_pairs, cohen_list, iterati
     for i in range(0,iterations):
         ml_ratelist.append(presets[i][0])
         cohen_ratelist.append(presets[i][1])
-        net_ratelist.append(presets[i][2])
+        if cohen_check >= 3:
+            net_ratelist.append(presets[i][2]/np.log(cohen_check))
+        else:
+            net_ratelist.append(presets[i][2])
         net_full[i] = []
 
     for n in range(0,length):
@@ -145,8 +149,6 @@ def machine_stuff(metrics, presets, model_method, new_pairs, cohen_list, iterati
     probs_NN = None
 
     return net_full
-
-
 
 #
 #
