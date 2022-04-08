@@ -278,6 +278,7 @@ def nucmer_stuff(base, threads, nuc_c, nuc_b, nuc_g, folder):
             split1 = line[0]
             split2 = line[1]
             s = subprocess.Popen('nucmer -c ' + str(nuc_c) + ' -b ' + str(nuc_b) + ' -g ' + str(nuc_g) + ' -p ' + outfolder + 'nucmer_' + str(n) + ' ' + str(split1) + ' ' + str(split2) + ' 2> /dev/null', shell=True)
+            s_list.append(s)
             i += 1
             if i == threads:
                 for item in s_list:
