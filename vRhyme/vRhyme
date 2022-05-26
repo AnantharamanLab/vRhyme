@@ -339,8 +339,8 @@ if derep_len < 1000:
     sys.stderr.write("\nError: minimum scaffold length (-m %s) cannot be set below 1000 for dereplication. Exiting.\n" % derep_len)
     exit(1)
 folder = str(args.o[0])
-if folder == '':
-    folder = 'vRhyme_results_' + str(in_fasta).rsplit(".",1)[0]
+if not folder:
+    folder = f'vRhyme_results_{base}'
 if folder[-1] != "/":
     folder += "/"
 
