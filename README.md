@@ -15,8 +15,8 @@ University of Wisconsin-Madison
 vRhyme v1.1.0  
 
 ## Citation
-If you find vRhyme useful please consider citing our manuscript on [bioRxiv](https://doi.org/10.1101/2021.12.16.473018):  
-Kieft, K., Adams, A., Salamzade, R., Kalan, L., & Anantharaman, K. vRhyme enables binning of viral genomes from metagenomes. bioRxiv, 2021.  
+If you find vRhyme useful please consider citing our manuscript on [Nucleic Acids Research](https://academic.oup.com/nar/advance-article/doi/10.1093/nar/gkac341/6584432):  
+Kieft, K., Adams, A., Salamzade, R., Kalan, L., & Anantharaman, K. vRhyme enables binning of viral genomes from metagenomes. Nucleic Acids Research, 2022.  
 
 ______
 ## Table of Contents:
